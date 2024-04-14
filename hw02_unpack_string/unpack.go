@@ -11,10 +11,9 @@ var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(s string) (string, error) {
 	var result strings.Builder
-	var lastChar rune
-	var repeatCount int
 	str := []rune(s)
 
+	var prev rune
 	for i, char := range str {
 		if unicode.IsDigit(char) && i == 0 {
 			return "", ErrInvalidString
@@ -24,26 +23,31 @@ func Unpack(s string) (string, error) {
 			return "", ErrInvalidString
 		}
 		if unicode.IsDigit(char) {
-			if lastChar == 0 {
-				return "", ErrInvalidString
+			digit, err := strconv.Atoi(string(char))
+			if err != nil {
+				return "", err
 			}
-			digit, _ := strconv.Atoi(string(char))
-			repeatCount += digit
+			if digit == 0 {
+				// Пропускаем предыдущий символ
+				prev = 0
+			} else {
+				// Добавляем повторения предыдущего символа
+				if prev != 0 {
+					result.WriteString(strings.Repeat(string(prev), digit-1))
+				}
+			}
 		} else {
-			if repeatCount > 0 {
-				result.WriteString(strings.Repeat(string(lastChar), repeatCount-1))
-				repeatCount = 0
+			// Добавляем текущий символ в результат
+			if prev != 0 {
+				result.WriteString(string(prev))
 			}
-			if unicode.IsDigit(char) && i > 0 && unicode.IsLetter(str[i-1]) {
-				continue
-			}
-			lastChar = char
-			result.WriteString(string(lastChar))
+			prev = char
 		}
-	}
 
-	if repeatCount > 0 {
-		result.WriteString(strings.Repeat(string(lastChar), repeatCount))
+		// Если это последний символ и он не цифра, добавляем его в результат
+		if i == len(str)-1 && !unicode.IsDigit(char) {
+			result.WriteString(string(char))
+		}
 	}
 
 	return result.String(), nil
