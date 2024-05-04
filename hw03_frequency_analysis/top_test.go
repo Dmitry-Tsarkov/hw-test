@@ -78,12 +78,6 @@ func TestTop10(t *testing.T) {
 				"не",        // 4
 				"то",        // 4
 			}
-
-			// for _, a := range Top10(text) {
-			// fmt.Println(a)
-			// }
-			// os.Exit(1)
-
 			require.Equal(t, expected, Top10(text))
 		}
 	})
@@ -97,7 +91,6 @@ func TestTop10(t *testing.T) {
 			"к",       // 1
 			"с",       // 1
 		}
-
 		require.Equal(t, expected, Top10(shortText))
 	})
 }
