@@ -1,4 +1,4 @@
-module github.com/Dmitry-Tsarkov/hw-test.git/hw03_frequency_analysis
+module github.com/Dmitry-Tsarkov/hw-test/hw03_frequency_analysis
 
 go 1.19
 
