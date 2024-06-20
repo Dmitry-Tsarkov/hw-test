@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,7 +51,71 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c := NewCache(3).(*lruCache)
+
+		c.Set("a", 1)
+		c.Set("b", 2)
+		c.Set("c", 3)
+
+		assert.Equal(t, 3, c.queue.Len())
+		assert.Equal(t, 3, len(c.items))
+
+		c.Set("d", 4)
+
+		_, found := c.Get("a")
+		assert.False(t, found)
+
+		value, found := c.Get("b")
+		assert.True(t, found)
+		assert.Equal(t, 2, value)
+
+		value, found = c.Get("c")
+		assert.True(t, found)
+		assert.Equal(t, 3, value)
+
+		value, found = c.Get("d")
+		assert.True(t, found)
+		assert.Equal(t, 4, value)
+	})
+
+	t.Run("old element", func(t *testing.T) {
+		c := NewCache(3).(*lruCache)
+
+		c.Set("a", 1)
+		c.Set("b", 2)
+		c.Set("c", 3)
+
+		assert.Equal(t, 3, c.queue.Len())
+		assert.Equal(t, 3, len(c.items))
+
+		c.Set("c", 10)
+		c.Set("a", 20)
+
+		c.Set("c", 200)
+		c.Set("a", 300)
+
+		c.Set("c", 2000)
+		c.Set("a", 3000)
+
+		assert.Equal(t, 3, c.queue.Len())
+		assert.Equal(t, 3, len(c.items))
+
+		c.Set("d", 4)
+
+		_, found := c.Get("b")
+		assert.False(t, found)
+
+		value, found := c.Get("a")
+		assert.True(t, found)
+		assert.Equal(t, 3000, value)
+
+		value, found = c.Get("c")
+		assert.True(t, found)
+		assert.Equal(t, 2000, value)
+
+		value, found = c.Get("d")
+		assert.True(t, found)
+		assert.Equal(t, 4, value)
 	})
 }
 
