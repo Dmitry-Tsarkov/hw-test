@@ -1,4 +1,4 @@
-module github.com/Dmitry-Tsarkov/hw-test.git/hw01_hello_otus
+module github.com/Dmitry-Tsarkov/hw-test/hw01_hello_otus
 
 go 1.19
 
