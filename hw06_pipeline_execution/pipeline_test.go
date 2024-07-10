@@ -20,6 +20,7 @@ func TestPipeline(t *testing.T) {
 			out := make(Bi)
 			go func() {
 				defer close(out)
+				// в in мы закидываем значения data
 				for v := range in {
 					time.Sleep(sleepPerStage)
 					out <- f(v)
@@ -35,12 +36,12 @@ func TestPipeline(t *testing.T) {
 		g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 }),
 		g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
 	}
-
 	t.Run("simple case", func(t *testing.T) {
 		in := make(Bi)
 		data := []int{1, 2, 3, 4, 5}
-
+		// пишем данные из дата в канал
 		go func() {
+			// defer close(in)
 			for _, v := range data {
 				in <- v
 			}
@@ -89,5 +90,38 @@ func TestPipeline(t *testing.T) {
 
 		require.Len(t, result, 0)
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
+	})
+
+	t.Run("empty input case", func(t *testing.T) {
+		in := make(Bi)
+		close(in)
+
+		result := make([]string, 0)
+		for s := range ExecutePipeline(in, nil, stages...) {
+			result = append(result, s.(string))
+		}
+
+		require.Equal(t, []string{}, result)
+	})
+
+	t.Run("single stage case", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		singleStage := g("Multiplier (* 2)", func(v interface{}) interface{} { return v.(int) * 2 })
+
+		result := make([]int, 0, 10)
+		for s := range ExecutePipeline(in, nil, singleStage) {
+			result = append(result, s.(int))
+		}
+
+		require.Equal(t, []int{2, 4, 6, 8, 10}, result)
 	})
 }
