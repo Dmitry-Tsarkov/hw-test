@@ -2,7 +2,7 @@ package hw06pipelineexecution
 
 type (
 	In  = <-chan interface{}
-	Out = In //alias for out
+	Out = In
 	Bi  = chan interface{}
 )
 
