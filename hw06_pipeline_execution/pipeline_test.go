@@ -36,8 +36,6 @@ func TestPipeline(t *testing.T) {
 		g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 }),
 		g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
 	}
-	// stages - это слайс функций, которые принимают обозначение действия и функцию-обработчик, каждое значение, которое будет
-	// передаваться в функцию, пройдется по каждому стейджу
 	t.Run("simple case", func(t *testing.T) {
 		in := make(Bi)
 		data := []int{1, 2, 3, 4, 5}
