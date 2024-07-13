@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 )
 
 var (
@@ -18,5 +20,20 @@ func init() {
 
 func main() {
 	flag.Parse()
+	if from == "" {
+		fmt.Printf("Ошибка ")
+	}
+	if to == "" {
+		fmt.Printf("Ошибка ")
+	}
+
+	err := Copy(from, to, offset, limit)
+
+	if err != nil {
+		fmt.Printf("Ошибка %v", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Copy succeeded")
 	// Place your code here.
 }
