@@ -21,19 +21,19 @@ func init() {
 func main() {
 	flag.Parse()
 	if from == "" {
-		fmt.Printf("Ошибка ")
+		fmt.Println("Ошибка: не указан исходный файл")
+		os.Exit(1)
 	}
 	if to == "" {
-		fmt.Printf("Ошибка ")
+		fmt.Println("Ошибка: не указан файл назначения")
+		os.Exit(1)
 	}
 
 	err := Copy(from, to, offset, limit)
-
 	if err != nil {
-		fmt.Printf("Ошибка %v", err)
+		fmt.Printf("Ошибка: %v\n", err)
 		os.Exit(1)
 	}
 
 	fmt.Println("Copy succeeded")
-	// Place your code here.
 }

@@ -4,6 +4,9 @@ import (
 	"errors"
 	"io"
 	"os"
+	"time"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 var (
@@ -11,68 +14,79 @@ var (
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
+type ProgressReader struct {
+	io.Reader
+	bar *pb.ProgressBar
+}
+
+func (pr *ProgressReader) Read(p []byte) (int, error) {
+	n, err := pr.Reader.Read(p)
+	if n > 0 {
+		for i := 0; i < n; i++ {
+			pr.bar.Increment()
+			time.Sleep(time.Millisecond)
+		}
+	}
+	return n, err
+}
+
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	// Открываем файл
 	fromFile, err := os.Open(fromPath)
 	if err != nil {
 		return err
 	}
-
-	//закрываем после копирования
 	defer fromFile.Close()
 
-	// получаем инфо о файле
 	fileInfo, err := fromFile.Stat()
 	if err != nil {
 		return err
 	}
 
-	// fmt.Println(fileInfo.Size())
-	// os.Exit(0)
-
-	// проверка что это обычный файл
 	if !fileInfo.Mode().IsRegular() {
 		return ErrUnsupportedFile
 	}
 
-	// если указатель чтения выходит за границы файла - ошибка
 	if offset > fileInfo.Size() {
 		return ErrOffsetExceedsFileSize
 	}
 
-	// создаем файл куда копируем данные
 	toFile, err := os.Create(toPath)
 	if err != nil {
 		return err
 	}
 	defer toFile.Close()
 
-	// Перемещаем указатель чтения из исходного файла на offset
 	_, err = fromFile.Seek(offset, io.SeekStart)
 	if err != nil {
 		return err
 	}
 
-	// count := int(fileInfo.Size()
-	// bar := pb.StartNew(count)
-	// for i := 0; i < count; i++ {
-	// 	bar.Increment()
-	// 	time.Sleep(time.Millisecond)
-	// }
-	// bar.Finish()
+	count := fileInfo.Size() - offset
+	if limit > 0 && limit < count {
+		count = limit
+	}
+	bar := pb.Start64(count)
+	bar.Start()
 
-	// Копируем данные
+	progressReader := &ProgressReader{
+		Reader: fromFile,
+		bar:    bar,
+	}
+
 	if limit > 0 {
-		_, err = io.CopyN(toFile, fromFile, limit)
+		_, err = io.CopyN(toFile, progressReader, limit)
 		if err != nil && err != io.EOF {
+			bar.Finish()
 			return err
 		}
 	} else {
-		_, err = io.Copy(toFile, fromFile)
+		_, err = io.Copy(toFile, progressReader)
 		if err != nil {
+			bar.Finish()
 			return err
 		}
 	}
+	bar.Finish()
 
 	return nil
 }
