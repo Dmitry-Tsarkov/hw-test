@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 )
 
@@ -20,18 +21,20 @@ func init() {
 
 func main() {
 	flag.Parse()
+
 	if from == "" {
-		fmt.Println("Ошибка: не указан исходный файл")
+		slog.Error("Ошибка: не указан исходный файл")
 		os.Exit(1)
 	}
+
 	if to == "" {
-		fmt.Println("Ошибка: не указан файл назначения")
+		slog.Error("Ошибка: не указан файл назначения")
 		os.Exit(1)
 	}
 
 	err := Copy(from, to, offset, limit)
 	if err != nil {
-		fmt.Printf("Ошибка: %v\n", err)
+		slog.Error("Ошибка", "error", err)
 		os.Exit(1)
 	}
 

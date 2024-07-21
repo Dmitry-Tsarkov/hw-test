@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"time"
 
 	"github.com/cheggaaa/pb/v3"
 )
@@ -24,7 +23,7 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 	if n > 0 {
 		for i := 0; i < n; i++ {
 			pr.bar.Increment()
-			time.Sleep(time.Millisecond)
+			// time.Sleep(time.Millisecond)
 		}
 	}
 	return n, err
@@ -75,7 +74,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	if limit > 0 {
 		_, err = io.CopyN(toFile, progressReader, limit)
-		if err != nil && err != io.EOF {
+		if err != nil && errors.Is(err, io.EOF) {
 			bar.Finish()
 			return err
 		}

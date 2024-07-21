@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// Test case struct
 type testCase struct {
 	name         string
 	fromFile     string
@@ -18,7 +17,6 @@ type testCase struct {
 	expectedErr  error
 }
 
-// Define test cases
 var tests = []testCase{
 	{
 		name:         "copy entire file",
@@ -59,18 +57,10 @@ var tests = []testCase{
 }
 
 func TestCopy(t *testing.T) {
-	// Define the test data directory
 	testDataDir := "testData"
 
-	// Define a helper function to read file contents
-	readFileContents := func(path string) ([]byte, error) {
-		return os.ReadFile(path)
-	}
-
-	// Run test cases
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a temporary file for the destination
 			tempFile, err := os.CreateTemp("", "copy_test_*")
 			if err != nil {
 				t.Fatalf("unable to create temp file: %v", err)
@@ -85,18 +75,18 @@ func TestCopy(t *testing.T) {
 					t.Errorf("unexpected error: %v", err)
 				}
 			} else {
-				expectedContents, err := readFileContents(filepath.Join(testDataDir, tt.expectedFile))
+				expectedContents, err := os.ReadFile(filepath.Join(testDataDir, tt.expectedFile))
 				if err != nil {
 					t.Fatalf("unable to read expected file: %v", err)
 				}
 
-				actualContents, err := readFileContents(tempFile.Name())
+				actualContents, err := os.ReadFile(tempFile.Name())
 				if err != nil {
 					t.Fatalf("unable to read actual file: %v", err)
 				}
 
 				if !bytes.Equal(expectedContents, actualContents) {
-					t.Errorf("contents do not match: expected %s, got %s", expectedContents, actualContents)
+					t.Errorf("contents don't match: expected %s, got %s", expectedContents, actualContents)
 				}
 			}
 		})
