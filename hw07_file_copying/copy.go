@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -29,63 +30,60 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func Copy(fromPath, toPath string, offset, limit int64) error {
-	fromFile, err := os.Open(fromPath)
+func Copy(from, to string, offset, limit int64) error {
+	srcFile, err := os.Open(from)
 	if err != nil {
 		return err
 	}
-	defer fromFile.Close()
+	defer srcFile.Close()
 
-	fileInfo, err := fromFile.Stat()
-	if err != nil {
-		return err
-	}
-
-	if !fileInfo.Mode().IsRegular() {
-		return ErrUnsupportedFile
-	}
-
-	if offset > fileInfo.Size() {
-		return ErrOffsetExceedsFileSize
-	}
-
-	toFile, err := os.Create(toPath)
-	if err != nil {
-		return err
-	}
-	defer toFile.Close()
-
-	_, err = fromFile.Seek(offset, io.SeekStart)
+	srcFileInfo, err := srcFile.Stat()
 	if err != nil {
 		return err
 	}
 
-	count := fileInfo.Size() - offset
-	if limit > 0 && limit < count {
-		count = limit
-	}
-	bar := pb.Start64(count)
-	bar.Start()
-
-	progressReader := &ProgressReader{
-		Reader: fromFile,
-		bar:    bar,
+	if offset > srcFileInfo.Size() {
+		return fmt.Errorf("offset exceeds file size")
 	}
 
-	if limit > 0 {
-		_, err = io.CopyN(toFile, progressReader, limit)
-		if err != nil && errors.Is(err, io.EOF) {
-			bar.Finish()
+	if limit == 0 || limit > srcFileInfo.Size()-offset {
+		limit = srcFileInfo.Size() - offset
+	}
+
+	dstFile, err := os.Create(to)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = srcFile.Seek(offset, io.SeekStart)
+	if err != nil {
+		return err
+	}
+
+	buf := make([]byte, 1024)
+	var totalCopied int64
+	for totalCopied < limit {
+		bytesToRead := int64(len(buf))
+		if limit-totalCopied < bytesToRead {
+			bytesToRead = limit - totalCopied
+		}
+
+		n, err := srcFile.Read(buf[:bytesToRead])
+		if err != nil && !errors.Is(err, io.EOF) {
 			return err
 		}
-	} else {
-		_, err = io.Copy(toFile, progressReader)
+		if n == 0 {
+			break
+		}
+
+		_, err = dstFile.Write(buf[:n])
 		if err != nil {
-			bar.Finish()
 			return err
 		}
+
+		totalCopied += int64(n)
 	}
-	bar.Finish()
 
 	return nil
 }

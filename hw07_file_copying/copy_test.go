@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -69,25 +70,25 @@ func TestCopy(t *testing.T) {
 			tempFile.Close()
 
 			err = Copy(filepath.Join(testDataDir, tt.fromFile), tempFile.Name(), tt.offset, tt.limit)
-
 			if err != nil {
-				if tt.expectedErr == nil || !os.IsNotExist(err) {
+				if tt.expectedErr == nil || !errors.Is(err, tt.expectedErr) {
 					t.Errorf("unexpected error: %v", err)
 				}
-			} else {
-				expectedContents, err := os.ReadFile(filepath.Join(testDataDir, tt.expectedFile))
-				if err != nil {
-					t.Fatalf("unable to read expected file: %v", err)
-				}
+				return
+			}
 
-				actualContents, err := os.ReadFile(tempFile.Name())
-				if err != nil {
-					t.Fatalf("unable to read actual file: %v", err)
-				}
+			expectedContents, err := os.ReadFile(filepath.Join(testDataDir, tt.expectedFile))
+			if err != nil {
+				t.Fatalf("unable to read expected file: %v", err)
+			}
 
-				if !bytes.Equal(expectedContents, actualContents) {
-					t.Errorf("contents don't match: expected %s, got %s", expectedContents, actualContents)
-				}
+			actualContents, err := os.ReadFile(tempFile.Name())
+			if err != nil {
+				t.Fatalf("unable to read actual file: %v", err)
+			}
+
+			if !bytes.Equal(expectedContents, actualContents) {
+				t.Errorf("contents don't match: expected %s, got %s", expectedContents, actualContents)
 			}
 		})
 	}
